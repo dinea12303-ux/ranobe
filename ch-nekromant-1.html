@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Глава</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0d14;color:#e8e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+
+header{background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);padding:0 16px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:12px;height:52px}
+.back{color:rgba(255,255,255,.5);text-decoration:none;font-size:.9rem;transition:color .2s;white-space:nowrap}
+.back:hover{color:#fff}
+.header-title{flex:1;font-size:.85rem;color:rgba(255,255,255,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+
+/* PLAYER */
+.player{background:#13131f;border-bottom:1px solid rgba(255,255,255,.06);padding:12px 16px;position:sticky;top:52px;z-index:99}
+.player-inner{max-width:720px;margin:0 auto}
+
+.progress-wrap{margin-bottom:10px}
+.progress-bar{width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:2px;cursor:pointer;position:relative}
+.progress-fill{height:100%;width:0%;background:#e05a5a;border-radius:2px;pointer-events:none;transition:width .15s}
+.progress-time{display:flex;justify-content:space-between;margin-top:4px}
+.progress-time span{font-size:.65rem;color:rgba(255,255,255,.25)}
+
+.controls{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.ctrl-group{display:flex;align-items:center;gap:6px}
+
+.btn{background:none;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.45);
+  border-radius:5px;padding:6px 11px;font-size:.78rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:rgba(255,255,255,.3);color:#fff}
+
+.play-btn{width:40px;height:40px;border-radius:50%;background:#e05a5a;border:none;
+  color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 12px rgba(224,90,90,.35);transition:transform .15s;flex-shrink:0}
+.play-btn:hover{transform:scale(1.08)}
+
+.sliders{display:flex;gap:16px}
+.s-row{display:flex;align-items:center;gap:8px;flex:1}
+.s-label{font-size:.67rem;color:rgba(255,255,255,.3);white-space:nowrap}
+input[type=range]{flex:1;-webkit-appearance:none;height:2px;background:rgba(255,255,255,.1);border-radius:1px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:#e05a5a;border-radius:50%;cursor:pointer}
+.s-val{font-size:.67rem;color:#e05a5a;min-width:26px;text-align:right}
+
+/* CHAPTER */
+.chapter{max-width:720px;margin:0 auto;padding:28px 16px 100px}
+
+.ch-header{margin-bottom:28px}
+.ch-meta{font-size:.7rem;color:rgba(255,255,255,.3);margin-bottom:8px}
+.ch-title{font-size:clamp(1.2rem,3.5vw,1.6rem);font-weight:700;color:#fff;line-height:1.3;margin-bottom:16px}
+.ch-divider{height:1px;background:rgba(255,255,255,.07)}
+
+.ch-text{padding-top:24px;font-size:clamp(.95rem,2.2vw,1.08rem);line-height:1.95;color:rgba(232,232,240,.82)}
+.ch-text p{margin-bottom:1.3em}
+.ch-text p.hl{background:rgba(224,90,90,.08);border-left:2px solid #e05a5a;padding-left:10px;margin-left:-12px;border-radius:0 3px 3px 0;color:#fff}
+
+.ch-nav{display:flex;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06);gap:10px}
+.ch-nav a{color:rgba(255,255,255,.5);text-decoration:none;font-size:.85rem;padding:9px 16px;
+  border:1px solid rgba(255,255,255,.08);border-radius:6px;transition:all .2s}
+.ch-nav a:hover{border-color:rgba(224,90,90,.4);color:#fff;background:rgba(224,90,90,.06)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <!-- ИЗМЕНИ: ссылку на страницу книги -->
+    <a href="book-nekromant.html" class="back">← К главам</a>
+    <div class="header-title" id="topTitle"></div>
+  </div>
+</header>
+
+<div class="player">
+  <div class="player-inner">
+    <div class="progress-wrap">
+      <div class="progress-bar" onclick="seekTo(event)">
+        <div class="progress-fill" id="pFill"></div>
+      </div>
+      <div class="progress-time">
+        <span id="pPct">0%</span>
+        <span id="pTotal">—</span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <button class="btn" onclick="restart()">↺ Сначала</button>
+        <button class="btn" onclick="back30()">−30с</button>
+      </div>
+      <button class="play-btn" onclick="togglePlay()" id="playBtn">▶</button>
+      <div class="ctrl-group">
+        <button class="btn" onclick="fwd30()">+30с</button>
+        <button class="btn" onclick="stopAll()">■ Стоп</button>
+      </div>
+    </div>
+    <div class="sliders">
+      <div class="s-row">
+        <span class="s-label">Скорость</span>
+        <input type="range" min="0.5" max="2.5" step="0.1" value="1" oninput="setRate(this.value)">
+        <span class="s-val" id="rateVal">1×</span>
+      </div>
+      <div class="s-row">
+        <span class="s-label">Громкость</span>
+        <input type="range" min="0" max="1" step="0.05" value="1" oninput="setVol(this.value)">
+        <span class="s-val" id="volVal">100%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="chapter">
+  <div class="ch-header">
+    <p class="ch-meta" id="chMeta"></p>
+    <h1 class="ch-title" id="chTitle"></h1>
+    <div class="ch-divider"></div>
+  </div>
+  <div class="ch-text" id="chText"></div>
+  <nav class="ch-nav">
+    <!-- ИЗМЕНИ: ссылки на пред/след главу -->
+    <a href="book-nekromant.html">← К списку</a>
+    <a href="ch-nekromant-2.html">Гл. 2 →</a>
+  </nav>
+</div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// МЕНЯЙ ТОЛЬКО ЭТИ СТРОКИ:
+
+const META  = "Великий Некромант · Глава 1";   // ← подпись сверху
+const TITLE = "Церемония получения профессии";  // ← заголовок
+const TEXT  = `
+Сюда вставь весь текст главы одним куском.
+Никаких тегов не нужно.
+
+Просто скопировал из файла — вставил сюда.
+Пустая строка между абзацами = новый абзац.
+
+Можно вставить сразу несколько глав подряд.
+`;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// НИЖЕ НЕ ТРОГАТЬ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+document.getElementById('chMeta').textContent  = META;
+document.getElementById('chTitle').textContent = TITLE;
+document.getElementById('topTitle').textContent = TITLE;
+
+const container = document.getElementById('chText');
+TEXT.trim().split(/\n\s*\n/).filter(p=>p.trim()).forEach(p=>{
+  const el=document.createElement('p');
+  el.textContent=p.replace(/\n/g,' ').trim();
+  container.appendChild(el);
+});
+
+const synth=window.speechSynthesis;
+let sentences=[],idx=0,playing=false,rate=1,vol=1;
+
+window.onload=()=>{
+  sentences=[];
+  document.querySelectorAll('#chText p').forEach((p,pi)=>{
+    (p.textContent.match(/[^.!?…]+[.!?…]*/g)||[p.textContent])
+      .forEach(s=>{if(s.trim())sentences.push({text:s.trim(),pi});});
+  });
+  document.getElementById('pTotal').textContent=sentences.length+' фраз';
+};
+
+function speakFrom(i){
+  synth.cancel();
+  if(i>=sentences.length){playing=false;updateBtn();updateProg();return;}
+  idx=i;playing=true;updateBtn();updateProg();hlPara(sentences[i].pi);
+  const u=new SpeechSynthesisUtterance(sentences[i].text);
+  u.lang='ru-RU';u.rate=rate;u.volume=vol;
+  u.onend=()=>speakFrom(idx+1);
+  synth.speak(u);
+}
+function togglePlay(){
+  if(playing){synth.pause();playing=false;}
+  else if(synth.paused){synth.resume();playing=true;}
+  else speakFrom(idx);
+  updateBtn();
+}
+function stopAll(){synth.cancel();playing=false;idx=0;updateBtn();updateProg();clearHl();}
+function restart(){speakFrom(0);}
+function back30(){speakFrom(Math.max(0,idx-Math.round(15*rate)));}
+function fwd30(){speakFrom(Math.min(sentences.length-1,idx+Math.round(15*rate)));}
+function setRate(v){rate=parseFloat(v);document.getElementById('rateVal').textContent=rate.toFixed(1)+'×';}
+function setVol(v){vol=parseFloat(v);document.getElementById('volVal').textContent=Math.round(v*100)+'%';}
+function updateBtn(){document.getElementById('playBtn').textContent=playing?'⏸':'▶';}
+function updateProg(){
+  const p=sentences.length?Math.round(idx/sentences.length*100):0;
+  document.getElementById('pFill').style.width=p+'%';
+  document.getElementById('pPct').textContent=p+'%';
+}
+function hlPara(pi){
+  document.querySelectorAll('#chText p').forEach((p,i)=>{
+    p.classList.toggle('hl',i===pi);
+    if(i===pi)p.scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
+}
+function clearHl(){document.querySelectorAll('#chText p').forEach(p=>p.classList.remove('hl'));}
+function seekTo(e){
+  if(!sentences.length)return;
+  const r=e.currentTarget.getBoundingClientRect();
+  speakFrom(Math.floor((e.clientX-r.left)/r.width*sentences.length));
+}
+</script>
+</body>
+</html>
