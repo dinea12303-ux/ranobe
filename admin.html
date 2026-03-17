@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Добавить главу</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0d14;color:#e8e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px}
+.box{max-width:600px;margin:0 auto}
+h1{font-size:1.1rem;color:#fff;margin-bottom:20px}
+.group{margin-bottom:14px}
+label{display:block;font-size:.68rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.2em;margin-bottom:6px}
+input,textarea,select{width:100%;background:#13131f;border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:10px 14px;color:#fff;font-size:.9rem;outline:none;font-family:inherit}
+input:focus,textarea:focus{border-color:rgba(224,90,90,.5)}
+textarea{min-height:300px;resize:vertical;line-height:1.7}
+.btn{width:100%;padding:13px;background:#e05a5a;border:none;border-radius:6px;color:#fff;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:6px;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.msg{text-align:center;padding:10px;border-radius:6px;margin-top:10px;font-size:.85rem;display:none}
+.msg.ok{background:rgba(76,175,80,.15);color:#4caf50;display:block}
+.msg.err{background:rgba(224,90,90,.15);color:#e05a5a;display:block}
+.back{display:inline-block;color:rgba(255,255,255,.4);text-decoration:none;font-size:.85rem;margin-bottom:20px}
+.back:hover{color:#fff}
+</style>
+</head>
+<body>
+<div class="box">
+  <a href="index.html" class="back">← На главную</a>
+  <h1>Добавить главу</h1>
+
+  <div class="group">
+    <label>Книга (папка)</label>
+    <select id="book">
+      <option value="nekromant">Великий Некромант</option>
+      <!-- добавляй новые книги сюда -->
+    </select>
+  </div>
+
+  <div class="group">
+    <label>Номер главы</label>
+    <input type="number" id="chNum" placeholder="1" min="1">
+  </div>
+
+  <div class="group">
+    <label>Название главы</label>
+    <input type="text" id="chTitle" placeholder="Церемония получения профессии">
+  </div>
+
+  <div class="group">
+    <label>Текст главы</label>
+    <textarea id="chText" placeholder="Вставь сюда весь текст главы..."></textarea>
+  </div>
+
+  <button class="btn" onclick="save()" id="saveBtn">Сохранить на сайт</button>
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+const TOKEN = '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';
+const REPO  = 'dinea12303-ux/ranobe';
+
+async function save(){
+  const book   = document.getElementById('book').value;
+  const num    = document.getElementById('chNum').value.trim();
+  const title  = document.getElementById('chTitle').value.trim();
+  const text   = document.getElementById('chText').value.trim();
+  const btn    = document.getElementById('saveBtn');
+  const msg    = document.getElementById('msg');
+
+  if(!num||!title||!text){ showMsg('Заполни все поля!','err'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Сохраняю...';
+  msg.className = 'msg';
+
+  // Генерируем HTML страницу главы
+  const paras = text.split(/\n\s*\n/).filter(p=>p.trim())
+    .map(p=>`  <p>${p.replace(/\n/g,' ').trim()}</p>`).join('\n');
+
+  const prevFile = num>1 ? `ch-${book}-${parseInt(num)-1}.html` : 'index.html';
+  const nextFile = `ch-${book}-${parseInt(num)+1}.html`;
+
+  const html = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0d14;color:#e8e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:720px;margin:0 auto;padding:0 16px 80px}
+header{padding:16px 0;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:28px;display:flex;align-items:center;gap:12px}
+.back{color:rgba(255,255,255,.4);text-decoration:none;font-size:.9rem;transition:color .2s}
+.back:hover{color:#fff}
+.ch-meta{font-size:.7rem;color:rgba(255,255,255,.3);margin-bottom:8px}
+h1{font-size:clamp(1.2rem,4vw,1.7rem);font-weight:700;color:#fff;line-height:1.3;margin-bottom:20px}
+.divider{height:1px;background:rgba(255,255,255,.07);margin-bottom:28px}
+.ch-text{font-size:clamp(1rem,2.5vw,1.1rem);line-height:2;color:rgba(232,232,240,.85)}
+.ch-text p{margin-bottom:1.4em;text-indent:1.5em}
+.ch-text p:first-child{text-indent:0}
+nav{display:flex;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid rgba(255,255,255,.07);gap:10px}
+nav a{color:rgba(255,255,255,.5);text-decoration:none;font-size:.85rem;padding:10px 16px;border:1px solid rgba(255,255,255,.08);border-radius:6px;transition:all .2s}
+nav a:hover{border-color:rgba(224,90,90,.4);color:#fff}
+</style>
+</head>
+<body>
+<header>
+  <a href="book-${book}.html" class="back">← К главам</a>
+</header>
+<p class="ch-meta">Глава ${num}</p>
+<h1>${title}</h1>
+<div class="divider"></div>
+<div class="ch-text">
+${paras}
+</div>
+<nav>
+  <a href="${prevFile}">← Назад</a>
+  <a href="${nextFile}">Вперёд →</a>
+</nav>
+</body>
+</html>`;
+
+  const filename = `ch-${book}-${num}.html`;
+  const encoded  = btoa(unescape(encodeURIComponent(html)));
+
+  // Проверяем — существует ли файл (нужен sha для обновления)
+  let sha = null;
+  try {
+    const check = await fetch(`https://api.github.com/repos/${REPO}/contents/${filename}`,{
+      headers:{'Authorization':`token ${TOKEN}`,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(check.ok){ const d=await check.json(); sha=d.sha; }
+  } catch(e){}
+
+  const body = { message:`Добавлена глава ${num}: ${title}`, content:encoded };
+  if(sha) body.sha = sha;
+
+  const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${filename}`,{
+    method:'PUT',
+    headers:{'Authorization':`token ${TOKEN}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Сохранить на сайт';
+
+  if(res.ok){
+    showMsg(`✓ Глава ${num} сохранена! Открой через 1-2 мин.`,'ok');
+    document.getElementById('chText').value='';
+    document.getElementById('chTitle').value='';
+  } else {
+    const err = await res.json();
+    showMsg('Ошибка: '+( err.message||'попробуй снова'),'err');
+  }
+}
+
+function showMsg(text, type){
+  const m = document.getElementById('msg');
+  m.textContent = text;
+  m.className = 'msg '+type;
+}
+</script>
+</body>
+</html>
